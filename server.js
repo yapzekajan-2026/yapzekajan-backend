@@ -20,6 +20,13 @@ app.post("/check-pro", (req, res) => {
     message: "Free kullanıcı"
   });
 });
+// TARAYICI TESTİ İÇİN GET DESTEK
+app.get("/check-pro", (req, res) => {
+  res.json({
+    pro: false,
+    message: "Free kullanıcı"
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
