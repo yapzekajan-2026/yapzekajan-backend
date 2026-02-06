@@ -1,80 +1,72 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
 app.use(cors());
 app.use(express.json());
 
+// ===============================
+// GEÇİCİ ANALİZ KAYITLARI (RAM)
+// ===============================
+const analyses = [];
+
+// ===============================
+// TEST ENDPOINT
+// ===============================
 app.get("/", (req, res) => {
-  res.send("YapZekaJan Backend çalışıyor 🚀");
+  res.send("YapZekaJan Backend çalışıyor");
 });
 
+// ===============================
+// ANALİZ KAYDETME
+// ===============================
 app.post("/save-analysis", (req, res) => {
-  const { userEmail, text, result } = req.body;
+  const { type, preview, result } = req.body;
 
-  if (!userEmail || !text || !result) {
+  if (!type || !preview || !result) {
     return res.status(400).json({ success: false });
   }
 
   const analysis = {
-    id: Date.now(),
-    userEmail,
-    type: "text",
-    preview: text.substring(0, 120),
+    _id: Date.now().toString(),
+    type,
+    preview,
     result,
     createdAt: new Date().toISOString()
   };
 
-  global.analyses = global.analyses || [];
-  global.analyses.push(analysis);
+  analyses.push(analysis);
 
-  console.log("📝 Yeni analiz:", analysis);
+  console.log("Yeni analiz kaydedildi:", analysis);
 
   res.json({ success: true });
 });
+
 // ===============================
-// ADIM 3 — ANALİZLERİ GETİR
+// ANALİZLERİ GETİR (DASHBOARD)
 // ===============================
 app.get("/get-analyses", (req, res) => {
-  const userEmail = req.query.userEmail;
-
-  if (!userEmail) {
-    return res.status(400).json([]);
-  }
-
-  const all = global.analyses || [];
-  const userAnalyses = all.filter(a => a.userEmail === userEmail);
-
-  res.json(userAnalyses);
+  res.json(analyses);
 });
 
+// ===============================
+// ANALİZ SİL
+// ===============================
+app.delete("/delete-analysis/:id", (req, res) => {
+  const { id } = req.params;
+  const index = analyses.findIndex(a => a._id === id);
+
+  if (index === -1) {
+    return res.json({ success: false });
+  }
+
+  analyses.splice(index, 1);
+  res.json({ success: true });
+});
+
+// ===============================
+const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
-// ===============================
-// ADIM 4 — ANALİZ SİLME
-// ===============================
-app.delete("/delete-analysis/:id", (req, res) => {
-  const id = Number(req.params.id);
-
-  if (!id) {
-    return res.status(400).json({ success: false });
-  }
-
-  global.analyses = global.analyses || [];
-  const before = global.analyses.length;
-
-  global.analyses = global.analyses.filter(a => a.id !== id);
-
-  const after = global.analyses.length;
-
-  if (before === after) {
-    return res.status(404).json({ success: false });
-  }
-
-  res.json({ success: true });
-});
-
