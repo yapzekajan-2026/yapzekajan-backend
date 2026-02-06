@@ -54,3 +54,27 @@ app.get("/get-analyses", (req, res) => {
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
+// ===============================
+// ADIM 4 — ANALİZ SİLME
+// ===============================
+app.delete("/delete-analysis/:id", (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!id) {
+    return res.status(400).json({ success: false });
+  }
+
+  global.analyses = global.analyses || [];
+  const before = global.analyses.length;
+
+  global.analyses = global.analyses.filter(a => a.id !== id);
+
+  const after = global.analyses.length;
+
+  if (before === after) {
+    return res.status(404).json({ success: false });
+  }
+
+  res.json({ success: true });
+});
+
