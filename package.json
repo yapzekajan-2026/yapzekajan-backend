@@ -13,3 +13,15 @@
     "iyzipay": "^2.0.64"
   }
 }
+{
+  "name": "yapzekajan-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
