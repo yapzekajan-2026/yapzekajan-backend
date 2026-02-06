@@ -34,6 +34,22 @@ app.post("/save-analysis", (req, res) => {
 
   res.json({ success: true });
 });
+// ===============================
+// ADIM 3 — ANALİZLERİ GETİR
+// ===============================
+app.get("/get-analyses", (req, res) => {
+  const userEmail = req.query.userEmail;
+
+  if (!userEmail) {
+    return res.status(400).json([]);
+  }
+
+  const all = global.analyses || [];
+  const userAnalyses = all.filter(a => a.userEmail === userEmail);
+
+  res.json(userAnalyses);
+});
+
 
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
