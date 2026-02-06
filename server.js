@@ -1,29 +1,21 @@
-import express from "express";
-import cors from "cors";
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Test endpoint (kontrol için)
 app.get("/", (req, res) => {
   res.send("YapZekaJan Backend çalışıyor 🚀");
 });
 
-// ===============================
-// ADIM 2 — ANALİZ KAYDETME (TEXT)
-// ===============================
 app.post("/save-analysis", (req, res) => {
   const { userEmail, text, result } = req.body;
 
   if (!userEmail || !text || !result) {
-    return res.status(400).json({
-      success: false,
-      message: "Eksik veri"
-    });
+    return res.status(400).json({ success: false });
   }
 
   const analysis = {
@@ -35,7 +27,6 @@ app.post("/save-analysis", (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  // Şimdilik RAM'de tutuyoruz
   global.analyses = global.analyses || [];
   global.analyses.push(analysis);
 
@@ -44,7 +35,6 @@ app.post("/save-analysis", (req, res) => {
   res.json({ success: true });
 });
 
-// Server start
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
