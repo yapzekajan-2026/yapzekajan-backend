@@ -8,11 +8,10 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 
 /* =========================
-   GEÇİCİ HAFIZA (DB YOK)
+   GEÇİCİ VERİLER (RAM)
 ========================= */
 let analyses = [];
 let users = [];
-let idCounter = 1;
 
 /* =========================
    TEST
@@ -32,11 +31,10 @@ app.post("/auth/register", (req, res) => {
   }
 
   if (users.find(u => u.email === email)) {
-    return res.status(400).json({ error: "Bu e-posta zaten kayıtlı" });
+    return res.status(400).json({ error: "Bu e-posta kayıtlı" });
   }
 
   const user = {
-    id: Date.now(),
     email,
     password,
     isPro: false,
@@ -59,7 +57,7 @@ app.post("/auth/login", (req, res) => {
   );
 
   if (!user) {
-    return res.status(401).json({ error: "Hatalı e-posta veya şifre" });
+    return res.status(401).json({ error: "Hatalı giriş" });
   }
 
   res.json({
@@ -69,7 +67,7 @@ app.post("/auth/login", (req, res) => {
 });
 
 /* =========================
-   ANALİZ KAYDET (EMAIL İLE)
+   ANALİZ KAYDET
 ========================= */
 app.post("/save-analysis", (req, res) => {
   const { userEmail, type, preview, result } = req.body;
@@ -79,7 +77,7 @@ app.post("/save-analysis", (req, res) => {
   }
 
   const analysis = {
-    id: idCounter++,
+    id: Date.now(),
     userEmail,
     type,
     preview: preview || "",
@@ -88,37 +86,31 @@ app.post("/save-analysis", (req, res) => {
   };
 
   analyses.unshift(analysis);
-
   console.log("Yeni analiz:", analysis);
 
   res.json({ success: true });
 });
 
 /* =========================
-   SADECE KULLANICIYA AİT ANALİZLER
+   KULLANICIYA ÖZEL ANALİZLER
 ========================= */
-app.get("/get-analyses/:email", (req, res) => {
-  const email = req.params.email;
+app.get("/get-analyses", (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email gerekli" });
+  }
+
   const userAnalyses = analyses.filter(a => a.userEmail === email);
   res.json(userAnalyses);
 });
 
 /* =========================
-   ANALİZ SİL (SADECE SAHİBİ)
+   ANALİZ SİL
 ========================= */
-app.delete("/delete-analysis/:id/:email", (req, res) => {
+app.delete("/delete-analysis/:id", (req, res) => {
   const id = Number(req.params.id);
-  const email = req.params.email;
-
-  const before = analyses.length;
-  analyses = analyses.filter(
-    a => !(a.id === id && a.userEmail === email)
-  );
-
-  if (analyses.length === before) {
-    return res.status(404).json({ success: false });
-  }
-
+  analyses = analyses.filter(a => a.id !== id);
   res.json({ success: true });
 });
 
