@@ -28,7 +28,7 @@ app.post("/analyze-text", async (req, res) => {
   }
 
   try {
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -40,46 +40,41 @@ app.post("/analyze-text", async (req, res) => {
           {
             role: "system",
             content:
-              "You are a linguistic analysis expert. Evaluate how similar the text is to human-written content. Do NOT say 'AI or human'. Return probability and explanation."
+              "Sen profesyonel bir yapay zeka metin analiz uzmanısın. Verilen metnin yapay zeka tarafından yazılıp yazılmadığını değerlendir, net ve güven veren bir analiz yap."
           },
           {
             role: "user",
-            content: `
-Metni analiz et:
-
-1. İnsan yazımına benzerlik yüzdesi (%)
-2. Nedenleri (madde madde)
-3. Genel değerlendirme (tek paragraf)
-
-Metin:
-"""
-${text}
-"""
-`
+            content: text
           }
-        ],
-        temperature: 0.2
+        ]
       })
     });
 
-    const data = await aiRes.json();
+    const data = await response.json();
 
-    const answer = data.choices[0].message.content;
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({
+        success: false,
+        error: "AI yanıtı alınamadı"
+      });
+    }
 
     res.json({
       success: true,
-      analysis: answer
+      analysis: data.choices[0].message.content
     });
-
   } catch (err) {
-    console.error("AI analiz hatası:", err);
+    console.error("ANALİZ HATASI:", err);
     res.status(500).json({
       success: false,
-      error: "AI analiz yapılamadı"
+      error: "Sunucu hatası"
     });
   }
 });
 
+// =====================
+// SERVER START
+// =====================
 app.listen(PORT, () => {
-  console.log("Backend ayakta. Port:", PORT);
+  console.log("Server çalışıyor. Port:", PORT);
 });
