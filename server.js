@@ -66,3 +66,63 @@ app.delete("/delete-analysis/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
+// =====================
+// AUTH (EMAIL + PASSWORD)
+// =====================
+
+const users = []; // şimdilik RAM (Render restart olursa sıfırlanır)
+
+app.post("/auth/register", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Eksik bilgi" });
+  }
+
+  const exists = users.find(u => u.email === email);
+  if (exists) {
+    return res.status(400).json({ error: "Bu e-posta zaten kayıtlı" });
+  }
+
+  const user = {
+    id: Date.now(),
+    email,
+    password,
+    isPro: false,
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(user);
+
+  res.json({
+    success: true,
+    message: "Kayıt başarılı",
+    user: { email: user.email, isPro: user.isPro }
+  });
+});
+
+app.post("/auth/login", (req, res) => {
+  const { email, password } = req.body;
+
+  const user = users.find(
+    u => u.email === email && u.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ error: "Hatalı e-posta veya şifre" });
+  }
+
+  res.json({
+    success: true,
+    user: {
+      email: user.email,
+      isPro: user.isPro
+    }
+  });
+});
+
+app.get("/auth/me", (req, res) => {
+  // Şimdilik frontend localStorage’dan soracak
+  res.json({ loggedIn: true });
+});
+
