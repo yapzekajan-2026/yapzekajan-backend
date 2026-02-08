@@ -7,71 +7,23 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 
-// Geçici hafıza (DB yerine)
+/* =========================
+   GEÇİCİ VERİLER (RAM)
+   ========================= */
 let analyses = [];
-let idCounter = 1;
+let users = [];
+let analysisId = 1;
 
-// =============================
-// TEST
-// =============================
+/* =========================
+   TEST
+   ========================= */
 app.get("/", (req, res) => {
   res.send("YapZekaJan Backend Çalışıyor");
 });
 
-// =============================
-// ANALİZ KAYDET
-// =============================
-app.post("/save-analysis", (req, res) => {
-  const { type, preview, result } = req.body;
-
-  if (!type || !preview || !result) {
-    return res.status(400).json({ success: false });
-  }
-
-  const item = {
-    id: idCounter++,
-    type,
-    preview,
-    result,
-    date: new Date().toISOString()
-  };
-
-  analyses.unshift(item);
-  res.json({ success: true });
-});
-
-// =============================
-// ANALİZLERİ GETİR
-// =============================
-app.get("/get-analyses", (req, res) => {
-  res.json(analyses);
-});
-
-// =============================
-// ANALİZ SİL (D)
-// =============================
-app.delete("/delete-analysis/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const before = analyses.length;
-
-  analyses = analyses.filter(a => a.id !== id);
-
-  if (analyses.length === before) {
-    return res.status(404).json({ success: false });
-  }
-
-  res.json({ success: true });
-});
-
-app.listen(PORT, () => {
-  console.log("Backend ayakta. Port:", PORT);
-});
-// =====================
-// AUTH (EMAIL + PASSWORD)
-// =====================
-
-const users = []; // şimdilik RAM (Render restart olursa sıfırlanır)
-
+/* =========================
+   AUTH — REGISTER
+   ========================= */
 app.post("/auth/register", (req, res) => {
   const { email, password } = req.body;
 
@@ -96,11 +48,13 @@ app.post("/auth/register", (req, res) => {
 
   res.json({
     success: true,
-    message: "Kayıt başarılı",
     user: { email: user.email, isPro: user.isPro }
   });
 });
 
+/* =========================
+   AUTH — LOGIN
+   ========================= */
 app.post("/auth/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -121,15 +75,9 @@ app.post("/auth/login", (req, res) => {
   });
 });
 
-app.get("/auth/me", (req, res) => {
-  // Şimdilik frontend localStorage’dan soracak
-  res.json({ loggedIn: true });
-});
-// =====================
-// ANALYSIS STORAGE
-// =====================
-const analyses = [];
-
+/* =========================
+   ANALİZ KAYDET
+   ========================= */
 app.post("/save-analysis", (req, res) => {
   const { userEmail, type, preview, result } = req.body;
 
@@ -138,19 +86,56 @@ app.post("/save-analysis", (req, res) => {
   }
 
   const analysis = {
-    id: Date.now(),
+    id: analysisId++,
     userEmail,
-    type,
+    type,           // text | pdf | image
     preview: preview || "",
     result: result || "",
     createdAt: new Date().toISOString()
   };
 
-  analyses.push(analysis);
-
+  analyses.unshift(analysis);
   console.log("Yeni analiz:", analysis);
 
   res.json({ success: true });
 });
 
+/* =========================
+   ANALİZLERİ GETİR
+   ========================= */
+app.get("/get-analyses", (req, res) => {
+  const { email } = req.query;
 
+  if (!email) {
+    return res.status(400).json({ error: "Email gerekli" });
+  }
+
+  const userAnalyses = analyses.filter(
+    a => a.userEmail === email
+  );
+
+  res.json(userAnalyses);
+});
+
+/* =========================
+   ANALİZ SİL
+   ========================= */
+app.delete("/delete-analysis/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const before = analyses.length;
+
+  analyses = analyses.filter(a => a.id !== id);
+
+  if (analyses.length === before) {
+    return res.status(404).json({ success: false });
+  }
+
+  res.json({ success: true });
+});
+
+/* =========================
+   SERVER START
+   ========================= */
+app.listen(PORT, () => {
+  console.log("Backend ayakta. Port:", PORT);
+});
