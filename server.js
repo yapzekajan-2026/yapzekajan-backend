@@ -8,22 +8,22 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 
 /* =========================
-   GEÇİCİ VERİLER (RAM)
-   ========================= */
+   GEÇİCİ HAFIZA (DB YOK)
+========================= */
 let analyses = [];
 let users = [];
-let analysisId = 1;
+let idCounter = 1;
 
 /* =========================
    TEST
-   ========================= */
+========================= */
 app.get("/", (req, res) => {
   res.send("YapZekaJan Backend Çalışıyor");
 });
 
 /* =========================
-   AUTH — REGISTER
-   ========================= */
+   AUTH
+========================= */
 app.post("/auth/register", (req, res) => {
   const { email, password } = req.body;
 
@@ -31,8 +31,7 @@ app.post("/auth/register", (req, res) => {
     return res.status(400).json({ error: "Eksik bilgi" });
   }
 
-  const exists = users.find(u => u.email === email);
-  if (exists) {
+  if (users.find(u => u.email === email)) {
     return res.status(400).json({ error: "Bu e-posta zaten kayıtlı" });
   }
 
@@ -52,9 +51,6 @@ app.post("/auth/register", (req, res) => {
   });
 });
 
-/* =========================
-   AUTH — LOGIN
-   ========================= */
 app.post("/auth/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -68,16 +64,13 @@ app.post("/auth/login", (req, res) => {
 
   res.json({
     success: true,
-    user: {
-      email: user.email,
-      isPro: user.isPro
-    }
+    user: { email: user.email, isPro: user.isPro }
   });
 });
 
 /* =========================
-   ANALİZ KAYDET
-   ========================= */
+   ANALİZ KAYDET (EMAIL İLE)
+========================= */
 app.post("/save-analysis", (req, res) => {
   const { userEmail, type, preview, result } = req.body;
 
@@ -86,45 +79,41 @@ app.post("/save-analysis", (req, res) => {
   }
 
   const analysis = {
-    id: analysisId++,
+    id: idCounter++,
     userEmail,
-    type,           // text | pdf | image
+    type,
     preview: preview || "",
     result: result || "",
     createdAt: new Date().toISOString()
   };
 
   analyses.unshift(analysis);
+
   console.log("Yeni analiz:", analysis);
 
   res.json({ success: true });
 });
 
 /* =========================
-   ANALİZLERİ GETİR
-   ========================= */
-app.get("/get-analyses", (req, res) => {
-  const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email gerekli" });
-  }
-
-  const userAnalyses = analyses.filter(
-    a => a.userEmail === email
-  );
-
+   SADECE KULLANICIYA AİT ANALİZLER
+========================= */
+app.get("/get-analyses/:email", (req, res) => {
+  const email = req.params.email;
+  const userAnalyses = analyses.filter(a => a.userEmail === email);
   res.json(userAnalyses);
 });
 
 /* =========================
-   ANALİZ SİL
-   ========================= */
-app.delete("/delete-analysis/:id", (req, res) => {
+   ANALİZ SİL (SADECE SAHİBİ)
+========================= */
+app.delete("/delete-analysis/:id/:email", (req, res) => {
   const id = Number(req.params.id);
-  const before = analyses.length;
+  const email = req.params.email;
 
-  analyses = analyses.filter(a => a.id !== id);
+  const before = analyses.length;
+  analyses = analyses.filter(
+    a => !(a.id === id && a.userEmail === email)
+  );
 
   if (analyses.length === before) {
     return res.status(404).json({ success: false });
@@ -133,9 +122,6 @@ app.delete("/delete-analysis/:id", (req, res) => {
   res.json({ success: true });
 });
 
-/* =========================
-   SERVER START
-   ========================= */
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
