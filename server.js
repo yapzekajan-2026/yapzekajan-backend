@@ -117,3 +117,30 @@ app.delete("/delete-analysis/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
+// =====================
+// PAYMENT SUCCESS (MOCK)
+// =====================
+app.post("/payment/success", (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "E-posta yok" });
+  }
+
+  const user = users.find(u => u.email === email);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "Kullanıcı bulunamadı" });
+  }
+
+  user.isPro = true;
+
+  console.log("PRO aktif edildi:", email);
+
+  res.json({
+    success: true,
+    message: "Pro üyelik aktif",
+    isPro: true
+  });
+});
+
