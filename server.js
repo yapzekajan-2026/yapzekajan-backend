@@ -125,4 +125,32 @@ app.get("/auth/me", (req, res) => {
   // Şimdilik frontend localStorage’dan soracak
   res.json({ loggedIn: true });
 });
+// =====================
+// ANALYSIS STORAGE
+// =====================
+const analyses = [];
+
+app.post("/save-analysis", (req, res) => {
+  const { userEmail, type, preview, result } = req.body;
+
+  if (!userEmail || !type) {
+    return res.status(400).json({ error: "Eksik veri" });
+  }
+
+  const analysis = {
+    id: Date.now(),
+    userEmail,
+    type,
+    preview: preview || "",
+    result: result || "",
+    createdAt: new Date().toISOString()
+  };
+
+  analyses.push(analysis);
+
+  console.log("Yeni analiz:", analysis);
+
+  res.json({ success: true });
+});
+
 
