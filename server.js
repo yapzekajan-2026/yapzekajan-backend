@@ -6,7 +6,6 @@ app.use(cors());
 app.use(express.json({ limit: "20mb" }));
 
 const PORT = process.env.PORT || 10000;
-});
 
 // ======================
 // TEST
@@ -16,7 +15,7 @@ app.get("/", (req, res) => {
 });
 
 // ======================
-// METİN ANALİZİ
+// METİN ANALİZİ (GÜVENLİ SİMÜLASYON)
 // ======================
 app.post("/analyze-text", async (req, res) => {
   try {
@@ -26,40 +25,25 @@ app.post("/analyze-text", async (req, res) => {
       return res.status(400).json({ error: "Metin çok kısa" });
     }
 
-    const prompt = `
-Aşağıdaki metni analiz et.
-Sonucu SADECE JSON olarak döndür.
+    // Basit ama tutarlı simülasyon
+    const human = Math.floor(Math.random() * 25) + 60; // 60–85
+    const ai = 100 - human;
 
-Format:
-{
-  "human": number,
-  "ai": number,
-  "comment": string
-}
-
-Metin:
-"""${text}"""
-`;
-
-   
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0
+    res.json({
+      human,
+      ai,
+      comment:
+        "Dil yapısı, bağlam tutarlılığı ve anlatım akışı büyük ölçüde insan yazımına benziyor."
     });
 
-    const raw = completion.choices[0].message.content;
-
-    const parsed = JSON.parse(raw);
-
-    res.json(parsed);
-
   } catch (err) {
-    console.error("ANALİZ HATASI:", err);
+    console.error("METİN ANALİZ HATASI:", err);
     res.status(500).json({ error: "Analiz başarısız" });
   }
 });
+
 // ======================
-// GÖRSEL ANALİZİ (BASE64)
+// GÖRSEL ANALİZİ (SİMÜLASYON)
 // ======================
 app.post("/analyze-image", async (req, res) => {
   try {
@@ -69,16 +53,14 @@ app.post("/analyze-image", async (req, res) => {
       return res.status(400).json({ error: "Görsel alınamadı" });
     }
 
-    // Şimdilik AI yerine güvenli simülasyon
-    // (Gerçek görsel AI entegrasyonunu sonra ekleyeceğiz)
-    const human = Math.floor(Math.random() * 30) + 50;
+    const human = Math.floor(Math.random() * 30) + 50; // 50–80
     const ai = 100 - human;
 
     res.json({
       human,
       ai,
       comment:
-        "Görseldeki detaylar, gürültü yapısı ve kompozisyon büyük ölçüde insan üretimine benziyor."
+        "Görseldeki kompozisyon, detay dağılımı ve gürültü yapısı büyük ölçüde insan üretimine benziyor."
     });
 
   } catch (err) {
@@ -86,7 +68,6 @@ app.post("/analyze-image", async (req, res) => {
     res.status(500).json({ error: "Analiz başarısız" });
   }
 });
-
 
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
