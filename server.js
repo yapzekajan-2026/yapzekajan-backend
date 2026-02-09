@@ -1,130 +1,68 @@
 import express from "express";
 import cors from "cors";
+import OpenAI from "openai";
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 
-/* =========================
-   TEST
-========================= */
-app.get("/", (req, res) => {
-  res.send("YapZekaJan Backend Çalışıyor 🚀");
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
-/* =========================
-   METİN ANALİZİ (OpenAI)
-========================= */
+// ======================
+// TEST
+// ======================
+app.get("/", (req, res) => {
+  res.send("YapZekaJan Backend Çalışıyor ✅");
+});
+
+// ======================
+// METİN ANALİZİ
+// ======================
 app.post("/analyze-text", async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ error: "Metin yok" });
+
+    if (!text || text.length < 20) {
+      return res.status(400).json({ error: "Metin çok kısa" });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Bir AI tespit sistemi gibi davran. Metnin insan mı yapay zeka mı olduğunu yüzdeyle belirt."
-          },
-          {
-            role: "user",
-            content: text
-          }
-        ]
-      })
+    const prompt = `
+Aşağıdaki metni analiz et.
+Sonucu SADECE JSON olarak döndür.
+
+Format:
+{
+  "human": number,
+  "ai": number,
+  "comment": string
+}
+
+Metin:
+"""${text}"""
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0
     });
 
-    const data = await response.json();
+    const raw = completion.choices[0].message.content;
 
-    // Basit skor üretimi (demo + güven verici)
-    const human = Math.floor(60 + Math.random() * 25);
-    const ai = 100 - human;
+    const parsed = JSON.parse(raw);
 
-    res.json({
-      success: true,
-      human,
-      ai,
-      explanation:
-        "Dil yapısı, bağlam sürekliliği ve anlatım tarzı büyük ölçüde insan yazımına benziyor."
-    });
+    res.json(parsed);
+
   } catch (err) {
-    console.error("TEXT ERROR:", err);
-    res.status(500).json({ error: "Analiz sırasında hata oluştu" });
+    console.error("ANALİZ HATASI:", err);
+    res.status(500).json({ error: "Analiz başarısız" });
   }
 });
 
-/* =========================
-   PDF ANALİZİ (FAKE → METİN GİBİ)
-========================= */
-app.post("/analyze-pdf", async (req, res) => {
-  try {
-    // Şimdilik PDF içeriği frontend’de text’e çevrilmiş kabul ediyoruz
-    const { text } = req.body;
-
-    if (!text) {
-      return res.status(400).json({ error: "PDF içeriği yok" });
-    }
-
-    const human = Math.floor(55 + Math.random() * 30);
-    const ai = 100 - human;
-
-    res.json({
-      success: true,
-      human,
-      ai,
-      explanation:
-        "PDF içeriğinde akademik tutarlılık ve doğal anlatım baskın."
-    });
-  } catch (err) {
-    console.error("PDF ERROR:", err);
-    res.status(500).json({ error: "PDF analiz hatası" });
-  }
-});
-
-/* =========================
-   GÖRSEL ANALİZİ (BASE64)
-   — MULTER YOK —
-========================= */
-app.post("/analyze-image", async (req, res) => {
-  try {
-    const { imageBase64 } = req.body;
-
-    if (!imageBase64) {
-      return res.status(400).json({ error: "Görsel yok" });
-    }
-
-    // Şimdilik güvenli skor (demo)
-    const human = Math.floor(50 + Math.random() * 30);
-    const ai = 100 - human;
-
-    res.json({
-      success: true,
-      human,
-      ai,
-      explanation:
-        "Görseldeki detay dağılımı ve gürültü paterni doğal üretime daha yakın."
-    });
-  } catch (err) {
-    console.error("IMAGE ERROR:", err);
-    res.status(500).json({ error: "Görsel analiz hatası" });
-  }
-});
-
-/* =========================
-   SERVER
-========================= */
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
