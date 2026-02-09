@@ -6,87 +6,80 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-/* =========================
-   TEST
-========================= */
+// =============================
+// TEST
+// =============================
 app.get("/", (req, res) => {
-  res.send("YapZekaJan AI Backend çalışıyor");
+  res.send("YapZekaJan Backend çalışıyor");
 });
 
-/* =========================
-   AI ANALYSIS (ENSEMBLE)
-========================= */
-app.post("/api/analyze", async (req, res) => {
-  const { type, content } = req.body;
-
-  if (!type || !content) {
-    return res.status(400).json({ error: "Eksik veri" });
-  }
-
+// =============================
+// METİN ANALİZİ (GERÇEK AI)
+// =============================
+app.post("/api/analyze-text", async (req, res) => {
   try {
-    /* ---------- 1️⃣ OPENAI ---------- */
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const { text } = req.body;
+
+    if (!text || text.length < 20) {
+      return res.status(400).json({ error: "Metin çok kısa" });
+    }
+
+    const prompt = `
+Aşağıdaki metnin yapay zeka tarafından üretilmiş olma ihtimalini yüzde olarak değerlendir.
+Cevabı sadece JSON formatında ver.
+
+Metin:
+"""${text}"""
+
+JSON formatı:
+{
+  "ai_probability": number,
+  "human_probability": number,
+  "explanation": string
+}
+`;
+
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Metnin insan mı yapay zeka mı tarafından yazıldığını olasılık yüzdesiyle değerlendir."
-          },
-          {
-            role: "user",
-            content
-          }
-        ],
+        messages: [{ role: "user", content: prompt }],
         temperature: 0
       })
     });
 
-    const aiData = await aiResponse.json();
-    const aiText = aiData.choices[0].message.content;
+    const data = await aiRes.json();
 
-    /* ---------- 2️⃣ SKORLAMA (v1) ---------- */
-    const humanScore = 70 + Math.floor(Math.random() * 20); // geçici — stabil
-    const aiScore = 100 - humanScore;
+    const content = data.choices?.[0]?.message?.content;
 
-    const finalResult =
-      humanScore >= aiScore
-        ? {
-            label: "İnsan tarafından yazılmış",
-            confidence: humanScore
-          }
-        : {
-            label: "Yapay zeka tarafından üretilmiş",
-            confidence: aiScore
-          };
+    if (!content) {
+      throw new Error("AI cevap üretmedi");
+    }
 
-    /* ---------- 3️⃣ RESPONSE ---------- */
+    const parsed = JSON.parse(content);
+
     res.json({
       success: true,
-      type,
-      result: finalResult.label,
-      confidence: finalResult.confidence,
-      explanation:
-        "Bu sonuç birden fazla analiz motorunun ortak değerlendirmesine dayanmaktadır."
+      ai: parsed.ai_probability,
+      human: parsed.human_probability,
+      explanation: parsed.explanation
     });
 
   } catch (err) {
-    console.error("AI ANALYSIS ERROR:", err);
-    res.status(500).json({ error: "Analiz sırasında hata oluştu" });
+    console.error("AI analiz hatası:", err);
+    res.status(500).json({ error: "Analiz başarısız" });
   }
 });
 
-/* =========================
-   SERVER
-========================= */
+// =============================
+// SERVER
+// =============================
 app.listen(PORT, () => {
-  console.log("YapZekaJan Backend ayakta. Port:", PORT);
+  console.log("Backend ayakta. Port:", PORT);
 });
