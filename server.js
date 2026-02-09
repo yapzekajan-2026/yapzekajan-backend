@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import fetch from "node-fetch";
 
 const app = express();
 app.use(cors());
@@ -62,7 +61,6 @@ METİN:
     });
 
     const aiData = await aiRes.json();
-
     const raw = aiData.choices?.[0]?.message?.content;
 
     if (!raw) {
