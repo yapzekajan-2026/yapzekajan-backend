@@ -72,3 +72,17 @@ app.post("/analyze-image", async (req, res) => {
 app.listen(PORT, () => {
   console.log("Backend ayakta. Port:", PORT);
 });
+// ======================
+// ANALİZ DETAY GETİR
+// ======================
+app.get("/analysis/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const analysis = analyses.find(a => a.id === id);
+
+  if (!analysis) {
+    return res.status(404).json({ error: "Analiz bulunamadı" });
+  }
+
+  res.json(analysis);
+});
+
