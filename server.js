@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 });
 
 // ======================
-// LOGIN (JWT ÜRETİR)
+// LOGIN (JWT ÜRETİR AMA ANALİZLER ŞU AN AÇIK)
 // ======================
 app.post("/login", (req, res) => {
   try {
@@ -48,30 +48,9 @@ app.post("/login", (req, res) => {
 });
 
 // ======================
-// TOKEN DOĞRULAMA
+// METİN ANALİZİ (STABİL)
 // ======================
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ error: "Token gerekli" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(403).json({ error: "Geçersiz token" });
-  }
-}
-
-// ======================
-// METİN ANALİZİ (TOKEN KORUMALI)
-// ======================
-app.post("/analyze-text", verifyToken, async (req, res) => {
+app.post("/analyze-text", async (req, res) => {
   try {
     const { text } = req.body;
 
@@ -96,9 +75,9 @@ app.post("/analyze-text", verifyToken, async (req, res) => {
 });
 
 // ======================
-// GÖRSEL ANALİZİ (TOKEN KORUMALI)
+// GÖRSEL ANALİZİ (STABİL)
 // ======================
-app.post("/analyze-image", verifyToken, async (req, res) => {
+app.post("/analyze-image", async (req, res) => {
   try {
     const { imageBase64 } = req.body;
 
